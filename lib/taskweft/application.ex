@@ -11,7 +11,7 @@ defmodule Taskweft.Application do
      — starts `TaskweftDeploy.Application.children/0` (a Cowboy endpoint).
      Detected via `RELEASE_NAME`, the env var `mix release` sets
      automatically at runtime — not a hand-rolled flag. Folded in from a
-     formerly-separate `deploy/` Mix project (github.com/taskweft/deploy,
+     formerly-separate `deploy/` Mix project (github.com/V-Sekai-fire/deploy,
      then a `deploy/` subdirectory with its own mix.exs/mix.lock): one Mix
      project, one mix.lock, no synced-across-two-lockfiles class of bug.
   2. **`taskweft` release, Burrito-wrapped standalone binary** (issue #53) —

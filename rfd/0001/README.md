@@ -1,7 +1,7 @@
 ---
 authors: K. S. Ernest (iFire) Lee <fire@users.noreply.github.com>
 state: published
-discussion: https://github.com/taskweft/taskweft/pull/1
+discussion: https://github.com/V-Sekai-fire/interactor-taskweft/pull/1
 labels: process
 ---
 
@@ -26,7 +26,7 @@ front-matter metadata block:
 ---
 authors: Name <email>
 state: prediscussion | ideation | discussion | published | committed | abandoned
-discussion: https://github.com/taskweft/taskweft/pull/<num>
+discussion: https://github.com/V-Sekai-fire/interactor-taskweft/pull/<num>
 labels: comma, separated, labels
 ---
 ```

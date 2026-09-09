@@ -9,7 +9,7 @@ The planner model is **RECTGTN** (Relationship-Enabled Capability-Temporal
 Goal-Task-Network). See [docs/rectgtn.md](docs/rectgtn.md).
 
 Download the binary from the
-[latest release](https://github.com/taskweft/taskweft/releases).
+[latest release](https://github.com/V-Sekai-fire/interactor-taskweft/releases).
 
 ```sh
 taskweft plan <domain.jsonld>        # plan from a file, --problem <d> <p>, or stdin

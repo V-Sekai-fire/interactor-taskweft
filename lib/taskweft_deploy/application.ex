@@ -45,7 +45,7 @@ defmodule TaskweftDeploy.Application do
 
     :persistent_term.put({:oauth_mcp_bridge, :service}, %{
       name: "Taskweft MCP",
-      documentation_url: "https://github.com/taskweft/taskweft"
+      documentation_url: "https://github.com/V-Sekai-fire/interactor-taskweft"
     })
 
     :persistent_term.put({:oauth_mcp_bridge, :page}, %{
@@ -54,7 +54,7 @@ defmodule TaskweftDeploy.Application do
         "Hosted HTN planner MCP server — plan / replan over JSON-LD domains, gated by GitHub sign-in (OAuth 2.1).",
       server_name: "taskweft",
       links: [
-        {"taskweft/taskweft", "https://github.com/taskweft/taskweft"}
+        {"taskweft/taskweft", "https://github.com/V-Sekai-fire/interactor-taskweft"}
       ]
     })
 
