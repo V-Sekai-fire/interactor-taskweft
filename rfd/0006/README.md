@@ -1,7 +1,7 @@
 ---
 authors: K. S. Ernest (iFire) Lee <fire@users.noreply.github.com>
 state: committed
-discussion: https://github.com/taskweft/taskweft/pull/105
+discussion: https://github.com/V-Sekai-fire/interactor-taskweft/pull/105
 labels: domain-design, heuristics, bitter-lesson
 ---
 

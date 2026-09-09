@@ -1,7 +1,7 @@
 ---
 authors: K. S. Ernest (iFire) Lee <fire@users.noreply.github.com>
 state: committed
-discussion: https://github.com/taskweft/taskweft/pull/96
+discussion: https://github.com/V-Sekai-fire/interactor-taskweft/pull/96
 labels: planner, rebac, capabilities
 ---
 

@@ -8,8 +8,8 @@ type: software
 version: "0.4.12"
 date-released: "2026-07-16"
 license: MIT
-repository-code: "https://github.com/taskweft/taskweft"
-url: "https://github.com/taskweft/taskweft"
+repository-code: "https://github.com/V-Sekai-fire/interactor-taskweft"
+url: "https://github.com/V-Sekai-fire/interactor-taskweft"
 abstract: >-
   HTN planner exposing plan/replan over the RECTGTN
   (Relationship-Enabled Capability-Temporal Goal-Task-Network)
