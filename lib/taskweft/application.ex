@@ -40,7 +40,10 @@ defmodule Taskweft.Application do
           []
       end
 
-    Supervisor.start_link(children, strategy: :one_for_one, name: Taskweft.Supervisor)
+    case children do
+      {:error, reason} -> {:error, reason}
+      specs -> Supervisor.start_link(specs, strategy: :one_for_one, name: Taskweft.Supervisor)
+    end
   end
 
   defp deploy_release?, do: System.get_env("RELEASE_NAME") == "taskweft_deploy"
