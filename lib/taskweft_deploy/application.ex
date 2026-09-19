@@ -29,9 +29,19 @@ defmodule TaskweftDeploy.Application do
 
   alias OAuthMCPBridge.Whitelist
 
-  @doc "Supervisor children for the hosted MCP web server."
+  @doc """
+  Supervisor children for the hosted MCP web server, or `{:error, reason}` when
+  a required secret is unavailable.
+  """
   def children do
-    :persistent_term.put({:oauth_mcp_bridge, :token_secret}, token_secret())
+    case fetch_token_secret() do
+      {:ok, secret} -> children(secret)
+      {:error, reason} -> {:error, reason}
+    end
+  end
+
+  defp children(token_secret) do
+    :persistent_term.put({:oauth_mcp_bridge, :token_secret}, token_secret)
 
     :persistent_term.put(
       {:oauth_mcp_bridge, :auth},
@@ -75,19 +85,43 @@ defmodule TaskweftDeploy.Application do
     ]
   end
 
-  defp token_secret do
+  # An ephemeral key invalidates every issued token on restart, so where Bao is
+  # configured a failed read is an error the caller reports rather than a
+  # fallback to a generated one.
+  defp fetch_token_secret do
+    case bao_token_secret() do
+      {:ok, secret} -> validate_secret(secret)
+      {:error, reason} -> {:error, {:bao_read_failed, reason}}
+      :not_configured -> env_token_secret()
+    end
+  end
+
+  defp bao_token_secret do
+    if TaskweftDeploy.Bao.configured?() do
+      TaskweftDeploy.Bao.read("secret", "taskweft", "token_secret")
+    else
+      :not_configured
+    end
+  end
+
+  defp env_token_secret do
     case env("TASKWEFT_TOKEN_SECRET", nil) do
-      s when is_binary(s) and byte_size(s) >= 16 ->
-        s
+      secret when is_binary(secret) ->
+        validate_secret(secret)
 
       _ ->
         Logger.warning(
-          "TASKWEFT_TOKEN_SECRET unset/short — using an ephemeral dev key (tokens won't survive restart)"
+          "TASKWEFT_TOKEN_SECRET unset — using an ephemeral dev key (tokens won't survive restart)"
         )
 
-        :crypto.strong_rand_bytes(32)
+        {:ok, :crypto.strong_rand_bytes(32)}
     end
   end
+
+  defp validate_secret(secret) when is_binary(secret) and byte_size(secret) >= 16,
+    do: {:ok, secret}
+
+  defp validate_secret(_secret), do: {:error, :token_secret_too_short}
 
   defp env(name, default) do
     case System.get_env(name) do
