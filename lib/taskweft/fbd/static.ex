@@ -1,11 +1,11 @@
 # SPDX-License-Identifier: MIT
 # Copyright (c) 2026 K. S. Ernest (iFire) Lee
 
-defmodule Taskweft.Grafcet.Static do
+defmodule Taskweft.FBD.Static do
   @moduledoc """
-  Static analyser for compact GRAFCET documents. Wraps
-  `libgrafcet_static` from `thirdparty/taskweft-grafcet-static` via
-  the NIF at `priv/grafcet_static_nif.so`.
+  Static analyser for compact FBD documents. Wraps
+  `libfbd_static` from `thirdparty/taskweft-fbd-static` via
+  the NIF at `priv/fbd_static_nif.so`.
 
   Two structural analyses per RFD 2144:
 
@@ -17,31 +17,31 @@ defmodule Taskweft.Grafcet.Static do
 
   ## Example
 
-      iex> {:ok, json} = Taskweft.Grafcet.Static.analyse(File.read!("chart.grafcet.jsonld"))
+      iex> {:ok, json} = Taskweft.FBD.Static.analyse(File.read!("chart.fbd.jsonld"))
       iex> Jason.decode!(json)
       %{"reachable" => ["init", "find", ...], "concurrent_pairs" => [["a", "b"]]}
   """
 
-  alias Taskweft.Grafcet.Static.Nif
+  alias Taskweft.FBD.Static.Nif
 
-  @doc "Analyse a compact GRAFCET JSON document. Returns `{:ok, json_reply}`."
+  @doc "Analyse a compact FBD JSON document. Returns `{:ok, json_reply}`."
   @spec analyse(iodata()) :: {:ok, binary()}
   def analyse(sfc_json), do: Nif.analyse(sfc_json)
 end
 
-defmodule Taskweft.Grafcet.Static.Nif do
+defmodule Taskweft.FBD.Static.Nif do
   @moduledoc false
   @on_load :load
 
   def load do
-    path = :filename.join(:code.priv_dir(:taskweft), ~c"grafcet_static_nif")
+    path = :filename.join(:code.priv_dir(:taskweft), ~c"fbd_static_nif")
 
     case :erlang.load_nif(path, 0) do
       :ok ->
         :ok
 
       {:error, reason} ->
-        IO.warn("failed to load grafcet_static_nif: #{inspect(reason)}")
+        IO.warn("failed to load fbd_static_nif: #{inspect(reason)}")
         :ok
     end
   end

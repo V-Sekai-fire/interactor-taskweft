@@ -1,21 +1,22 @@
 # SPDX-License-Identifier: MIT
 # Copyright (c) 2026 K. S. Ernest (iFire) Lee
 
-defmodule Taskweft.GrafcetTest do
+defmodule Taskweft.FBDTest do
   use ExUnit.Case, async: true
 
-  alias Taskweft.Grafcet
+  alias Taskweft.FBD
 
-  @fixtures Path.expand("../fixtures/grafcet", __DIR__)
+  @fixtures Path.expand("../fixtures/fbd", __DIR__)
 
   defp load(rel), do: @fixtures |> Path.join(rel) |> File.read!() |> Jason.decode!()
 
-  test "lower/1 accepts the weftspun-build compact GRAFCET and produces HTN with all seven actions" do
-    g = load("weftspun-build.grafcet.jsonld")
-    htn = Grafcet.lower(g)
+  test "lower/1 accepts the weftspun-build compact FBD and produces HTN with all seven actions" do
+    g = load("weftspun-build.fbd.jsonld")
+    htn = Fbd.lower(g)
 
     assert htn["@type"] == "domain:Definition"
     assert htn["name"] == "weftspun_hexagonal_buildout"
+
     assert Map.keys(htn["actions"]) |> Enum.sort() ==
              ~w(a_embedder a_ingest a_lake a_oracle a_phenotype a_render a_slat)
 
@@ -29,24 +30,24 @@ defmodule Taskweft.GrafcetTest do
     assert oracle_preds == ~w(/done/embedder /done/ingest /done/phenotype /done/slat)
   end
 
-  test "to_grafcet/1 on a lowered HTN reproduces the canonical compact GRAFCET" do
-    g = load("weftspun-build.grafcet.jsonld")
-    back = g |> Grafcet.lower() |> Grafcet.to_grafcet()
-    assert Grafcet.canon(back["S"]) == Grafcet.canon(g["S"])
+  test "to_fbd/1 on a lowered HTN reproduces the canonical compact FBD" do
+    g = load("weftspun-build.fbd.jsonld")
+    back = g |> Fbd.lower() |> Fbd.to_fbd()
+    assert Fbd.canon(back["S"]) == Fbd.canon(g["S"])
     assert back["V"] == g["V"]
     assert back["sfc"] == g["sfc"]
   end
 
-  test "lower/to_grafcet is idempotent on canonical GRAFCET (round-trip identity)" do
-    g = load("weftspun-build.grafcet.jsonld")
-    once = g |> Grafcet.lower() |> Grafcet.to_grafcet()
-    twice = once |> Grafcet.lower() |> Grafcet.to_grafcet()
-    assert Grafcet.canon(once) == Grafcet.canon(twice)
+  test "lower/to_fbd is idempotent on canonical FBD (round-trip identity)" do
+    g = load("weftspun-build.fbd.jsonld")
+    once = g |> Fbd.lower() |> Fbd.to_fbd()
+    twice = once |> Fbd.lower() |> Fbd.to_fbd()
+    assert Fbd.canon(once) == Fbd.canon(twice)
   end
 
   test "OR-divergence fixture lowers into a chooser method (RFD 2143 stage 1)" do
-    g = load("blocks_get_or.grafcet.jsonld")
-    htn = Grafcet.lower(g)
+    g = load("blocks_get_or.fbd.jsonld")
+    htn = Fbd.lower(g)
 
     # The chooser method replaces the individual m_pickup_from_table /
     # m_unstack skip-or-do methods; those two names should not appear.
@@ -75,9 +76,9 @@ defmodule Taskweft.GrafcetTest do
 
   test "hand-authored HTN normalises after one raise/lower pass and is then idempotent" do
     h = load("weftspun-build.domain.jsonld")
-    once = h |> Grafcet.to_grafcet() |> Grafcet.lower()
-    twice = once |> Grafcet.to_grafcet() |> Grafcet.lower()
-    assert Grafcet.canon(once) == Grafcet.canon(twice)
+    once = h |> Fbd.to_fbd() |> Fbd.lower()
+    twice = once |> Fbd.to_fbd() |> Fbd.lower()
+    assert Fbd.canon(once) == Fbd.canon(twice)
 
     # the hand-authored form carries transitively-redundant guards on
     # a_oracle and a_phenotype; the normalised form drops them

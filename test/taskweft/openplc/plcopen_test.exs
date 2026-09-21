@@ -13,25 +13,27 @@ defmodule Taskweft.OpenPLC.PLCopenTest do
 
   alias Taskweft.OpenPLC.PLCopen
 
-  @fixture Path.expand("../../fixtures/grafcet/weftspun-build.grafcet.jsonld",
-                       __DIR__)
+  @fixture Path.expand(
+             "../../fixtures/fbd/weftspun-build.fbd.jsonld",
+             __DIR__
+           )
 
-  test "weftspun-build compact GRAFCET emits an FBD-only POU" do
+  test "weftspun-build compact FBD emits an FBD-only POU" do
     g = @fixture |> File.read!() |> Jason.decode!()
     xml = PLCopen.emit(g)
 
     assert xml =~ ~s(<pou name="weftspun_hexagonal_buildout" pouType="program">)
 
     # SFC is blocklisted — no step-graph elements anywhere
-    refute xml =~ "<SFC>",         "SFC body found; SFC is blocklisted per BLOCKLIST"
-    refute xml =~ "<step ",        "step element found; SFC is blocklisted"
-    refute xml =~ "<transition ",  "transition element found; SFC is blocklisted"
-    refute xml =~ "initialStep=",  "initialStep attr found; SFC is blocklisted"
+    refute xml =~ "<SFC>", "SFC body found; SFC is blocklisted per BLOCKLIST"
+    refute xml =~ "<step ", "step element found; SFC is blocklisted"
+    refute xml =~ "<transition ", "transition element found; SFC is blocklisted"
+    refute xml =~ "initialStep=", "initialStep attr found; SFC is blocklisted"
 
     # ST, LD, IL likewise stay out
-    refute xml =~ "<ST>",   "ST body found; ST is blocklisted"
-    refute xml =~ "<LD>",   "LD body found; LD is blocklisted"
-    refute xml =~ "<IL>",   "IL body found; IL is deprecated"
+    refute xml =~ "<ST>", "ST body found; ST is blocklisted"
+    refute xml =~ "<LD>", "LD body found; LD is blocklisted"
+    refute xml =~ "<IL>", "IL body found; IL is deprecated"
     refute xml =~ "CDATA"
     refute xml =~ ":="
 
@@ -74,17 +76,24 @@ defmodule Taskweft.OpenPLC.PLCopenTest do
     File.write!(tmp, xml)
 
     case System.find_executable("xmllint") do
-      nil -> :ok
+      nil ->
+        :ok
+
       xmllint ->
         {output, code} = System.cmd(xmllint, ["--noout", tmp], stderr_to_stdout: true)
+
         assert code == 0,
                "PLCopen FBD XML rejected by xmllint (exit #{code}):\n#{output}"
     end
   end
 
   test "OR-divergence raises with a pointer at RFD 2147 staging" do
-    or_fixture = Path.expand("../../fixtures/grafcet/blocks_get_or.grafcet.jsonld",
-                             __DIR__)
+    or_fixture =
+      Path.expand(
+        "../../fixtures/fbd/blocks_get_or.fbd.jsonld",
+        __DIR__
+      )
+
     g = or_fixture |> File.read!() |> Jason.decode!()
 
     assert_raise RuntimeError, ~r/staged; see RFD 214[37]/, fn ->

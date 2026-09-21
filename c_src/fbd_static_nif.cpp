@@ -1,9 +1,9 @@
-// Elixir NIF that calls the Lean-produced GRAFCET static analyser
-// through the C bridge in `thirdparty/taskweft-grafcet-static`.
+// Elixir NIF that calls the Lean-produced FBD static analyser
+// through the C bridge in `thirdparty/taskweft-fbd-static`.
 //
 // The library exposes:
-//   char *grafcet_static_analyse(const char *sfc_json);
-//   void  grafcet_static_free(char *buf);
+//   char *fbd_static_analyse(const char *sfc_json);
+//   void  fbd_static_free(char *buf);
 //
 // This NIF wraps that pair: takes an Elixir iodata SFC, returns the
 // analyser's reply as an Elixir binary. Runs on a dirty CPU scheduler
@@ -15,8 +15,8 @@
 #include <cstring>
 
 extern "C" {
-    char *grafcet_static_analyse(const char *sfc_json);
-    void grafcet_static_free(char *buf);
+    char *fbd_static_analyse(const char *sfc_json);
+    void fbd_static_free(char *buf);
 }
 
 namespace {
@@ -35,7 +35,7 @@ ERL_NIF_TERM nif_analyse(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[]) {
     std::memcpy(nullterm, body.data, body.size);
     nullterm[body.size] = '\0';
 
-    char* reply = grafcet_static_analyse(nullterm);
+    char* reply = fbd_static_analyse(nullterm);
     enif_free(nullterm);
     if (!reply) {
         return enif_raise_exception(env, enif_make_atom(env, "analyse_null"));
@@ -45,7 +45,7 @@ ERL_NIF_TERM nif_analyse(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[]) {
     const std::size_t n = std::strlen(reply);
     unsigned char* dst = enif_make_new_binary(env, n, &out);
     std::memcpy(dst, reply, n);
-    grafcet_static_free(reply);
+    fbd_static_free(reply);
 
     ERL_NIF_TERM ok = enif_make_atom(env, "ok");
     return enif_make_tuple2(env, ok, out);
@@ -57,4 +57,4 @@ ErlNifFunc nif_funcs[] = {
 
 }  // namespace
 
-ERL_NIF_INIT(Elixir.Taskweft.Grafcet.Static.Nif, nif_funcs, nullptr, nullptr, nullptr, nullptr)
+ERL_NIF_INIT(Elixir.Taskweft.FBD.Static.Nif, nif_funcs, nullptr, nullptr, nullptr, nullptr)

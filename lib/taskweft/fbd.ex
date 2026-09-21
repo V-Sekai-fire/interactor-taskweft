@@ -1,21 +1,21 @@
 # SPDX-License-Identifier: MIT
 # Copyright (c) 2026 K. S. Ernest (iFire) Lee
 
-defmodule Taskweft.Grafcet do
+defmodule Taskweft.FBD do
   @moduledoc """
-  Compact IEC 60848 GRAFCET (Project-AGRAFE aligned) <-> Taskweft HTN.
+  Compact IEC 60848 FBD (Project-AGRAFE aligned) <-> Taskweft HTN.
 
-  `lower/1` turns a compact GRAFCET JSON-LD map into an HTN domain map in
+  `lower/1` turns a compact FBD JSON-LD map into an HTN domain map in
   the shape the C++ NIF loader consumes (variables / actions / methods /
-  tasks, with `pointer/set`, `pointer/get`, `math/eq`). `to_grafcet/1`
+  tasks, with `pointer/set`, `pointer/get`, `math/eq`). `to_fbd/1`
   goes the other way, dropping transitively-redundant guards to a
   canonical form. Both are pure functions on parsed maps.
 
-  Round-trip semantics: `to_grafcet(lower(g)) == g` when `g` is canonical;
-  `lower(to_grafcet(h))` is idempotent for any well-formed `h`.
+  Round-trip semantics: `to_fbd(lower(g)) == g` when `g` is canonical;
+  `lower(to_fbd(h))` is idempotent for any well-formed `h`.
 
   Scope limited to the AND/sequential fragment used by
-  `weftspun-build.grafcet.jsonld`: `^`, `Step`, `&>`, `&<`. The `|>`,
+  `weftspun-build.fbd.jsonld`: `^`, `Step`, `&>`, `&<`. The `|>`,
   `|<`, `!>`, `%`, `#` markers raise `RuntimeError`.
   """
 
@@ -24,10 +24,10 @@ defmodule Taskweft.Grafcet do
   @duration_re ~r/^(?<n>\d+)h$/
   @iso_duration_re ~r/^PT(?<n>\d+)H$/
 
-  ## -- lower: compact GRAFCET -> HTN --------------------------------------
+  ## -- lower: compact FBD -> HTN --------------------------------------
 
   @spec lower(map()) :: map()
-  def lower(%{"S" => steps, "V" => vars} = grafcet) do
+  def lower(%{"S" => steps, "V" => vars} = fbd) do
     {ordinary, order, or_groups} = walk_steps(steps)
 
     # or_groups is [{parent_name, [branch_step_names]}, ...]. Each branch
@@ -68,8 +68,7 @@ defmodule Taskweft.Grafcet do
             }
           end) ++ [%{"pointer/set" => "/done/#{var}", "value" => bool_of(val)}]
 
-        {"a_#{name}",
-         %{"params" => [], "duration" => duration_to_iso(info.t), "body" => body}}
+        {"a_#{name}", %{"params" => [], "duration" => duration_to_iso(info.t), "body" => body}}
       end)
       |> Map.new()
 
@@ -88,6 +87,7 @@ defmodule Taskweft.Grafcet do
           Enum.map(branches, fn b ->
             info = Map.fetch!(ordinary, b)
             preds = parse_receptivity(info.when)
+
             check =
               Enum.map(preds, fn p ->
                 %{
@@ -136,8 +136,8 @@ defmodule Taskweft.Grafcet do
         "domain" => "weftspun:planning/domain/"
       },
       "@type" => "domain:Definition",
-      "name" => Map.get(grafcet, "sfc"),
-      "description" => Map.get(grafcet, "descr"),
+      "name" => Map.get(fbd, "sfc"),
+      "description" => Map.get(fbd, "descr"),
       "variables" => [%{"name" => "done", "init" => vars}],
       "actions" => actions,
       "methods" => methods,
@@ -207,8 +207,9 @@ defmodule Taskweft.Grafcet do
   defp walk_step(["|<"], acc) do
     # close the OR block, record its {parent, branches}
     {ord, order, last, fp, fpen, pc, op, _oc, og} = acc
-    branches = for n <- Enum.reverse(order), n in Map.keys(ord),
-                 Map.get(ord[n], :or_parent) == op, do: n
+
+    branches =
+      for n <- Enum.reverse(order), n in Map.keys(ord), Map.get(ord[n], :or_parent) == op, do: n
 
     {ord, order, last, fp, fpen, pc, nil, nil, [{op, Enum.reverse(branches)} | og]}
   end
@@ -228,6 +229,7 @@ defmodule Taskweft.Grafcet do
       cond do
         fpen && name in fpen ->
           rest = List.delete(fpen, name)
+
           if rest == [],
             do: {fp, nil, nil, nil, oc},
             else: {fp, fp, rest, nil, oc}
@@ -303,10 +305,10 @@ defmodule Taskweft.Grafcet do
     Map.reject(map, fn {_, v} -> is_nil(v) end)
   end
 
-  ## -- to_grafcet: HTN -> compact GRAFCET ---------------------------------
+  ## -- to_fbd: HTN -> compact FBD ---------------------------------
 
-  @spec to_grafcet(map()) :: map()
-  def to_grafcet(%{"actions" => actions, "variables" => [%{"init" => init} | _]} = htn) do
+  @spec to_fbd(map()) :: map()
+  def to_fbd(%{"actions" => actions, "variables" => [%{"init" => init} | _]} = htn) do
     # Elixir maps at this size are hash-ordered, so we can't read step order
     # from actions' keys. Take it from the buildout method's subtasks list,
     # which is a JSON array and thus order-preserving.
@@ -318,7 +320,11 @@ defmodule Taskweft.Grafcet do
       |> Enum.map(fn [m] -> String.replace_prefix(m, "m_", "") end)
 
     order = Enum.map(names, &"a_#{&1}")
-    parsed = for aname <- order, into: %{}, do: {String.replace_prefix(aname, "a_", ""), parse_action_body(actions[aname])}
+
+    parsed =
+      for aname <- order,
+          into: %{},
+          do: {String.replace_prefix(aname, "a_", ""), parse_action_body(actions[aname])}
 
     succs = build_succs(names, parsed)
     fanout_members = build_fanout_members(succs, parsed)
@@ -351,9 +357,14 @@ defmodule Taskweft.Grafcet do
 
         when_ =
           cond do
-            fan_in -> ""
-            Map.has_key?(fanout_members, name) -> ""
-            true -> info.preds |> Enum.reject(&(&1 == prev)) |> Enum.map(&"X.#{&1}") |> Enum.join(" & ")
+            fan_in ->
+              ""
+
+            Map.has_key?(fanout_members, name) ->
+              ""
+
+            true ->
+              info.preds |> Enum.reject(&(&1 == prev)) |> Enum.map(&"X.#{&1}") |> Enum.join(" & ")
           end
 
         do_ = "V.#{info.var}:=#{int_of(info.val)}"
@@ -364,21 +375,21 @@ defmodule Taskweft.Grafcet do
     %{
       "@context" => %{
         "@version" => 1.1,
-        "grafcet" => "https://project-agrafe.github.io/ns/grafcet#",
-        "sfc" => %{"@id" => "grafcet:name"},
-        "descr" => %{"@id" => "grafcet:description"},
-        "V" => %{"@id" => "grafcet:internalVariables", "@container" => "@index"},
-        "S" => %{"@id" => "grafcet:steps", "@container" => "@list"},
-        "^" => "grafcet:InitialStep",
-        "%" => "grafcet:MacroStep",
-        "#" => "grafcet:EnclosingStep",
-        "&>" => "grafcet:AndDivergence",
-        "&<" => "grafcet:AndConvergence",
-        "|>" => "grafcet:OrDivergence",
-        "|<" => "grafcet:OrConvergence",
-        "!>" => "grafcet:ForcingOrder"
+        "fbd" => "https://project-agrafe.github.io/ns/fbd#",
+        "sfc" => %{"@id" => "fbd:name"},
+        "descr" => %{"@id" => "fbd:description"},
+        "V" => %{"@id" => "fbd:internalVariables", "@container" => "@index"},
+        "S" => %{"@id" => "fbd:steps", "@container" => "@list"},
+        "^" => "fbd:InitialStep",
+        "%" => "fbd:MacroStep",
+        "#" => "fbd:EnclosingStep",
+        "&>" => "fbd:AndDivergence",
+        "&<" => "fbd:AndConvergence",
+        "|>" => "fbd:OrDivergence",
+        "|<" => "fbd:OrConvergence",
+        "!>" => "fbd:ForcingOrder"
       },
-      "@type" => "grafcet:SFC",
+      "@type" => "fbd:SFC",
       "sfc" => Map.get(htn, "name"),
       "descr" => Map.get(htn, "description"),
       "V" => init,
@@ -433,7 +444,13 @@ defmodule Taskweft.Grafcet do
   ## -- semantic equality --------------------------------------------------
 
   @doc "Order-insensitive canonical form for eq check."
-  def canon(x) when is_map(x), do: x |> Enum.sort_by(fn {k, _} -> k end) |> Enum.map(fn {k, v} -> {k, canon(v)} end) |> Map.new()
+  def canon(x) when is_map(x),
+    do:
+      x
+      |> Enum.sort_by(fn {k, _} -> k end)
+      |> Enum.map(fn {k, v} -> {k, canon(v)} end)
+      |> Map.new()
+
   def canon(x) when is_list(x), do: Enum.map(x, &canon/1)
   def canon(x), do: x
 end

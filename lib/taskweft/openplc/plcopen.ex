@@ -3,7 +3,7 @@
 
 defmodule Taskweft.OpenPLC.PLCopen do
   @moduledoc """
-  Emit PLCopen TC6 XML for the **FBD** POU of a compact GRAFCET
+  Emit PLCopen TC6 XML for the **FBD** POU of a compact FBD
   document (RFD 2143 profile). SFC, ST, and LD are all blocklisted
   as RECTGTN targets per RFD 2145; the state machine is encoded as
   an FBD network of `SR_L` flip-flops (one per step), `AND` gates
@@ -11,7 +11,7 @@ defmodule Taskweft.OpenPLC.PLCopen do
 
   Stage-1 coverage:
 
-    * Each step X in the compact GRAFCET's `S` array becomes one
+    * Each step X in the compact FBD's `S` array becomes one
       `SR_L` block named `step_X`. `step_X.Q` is "step X active".
     * Each transition from X to Y guarded by receptivity G becomes
       `AND(step_X.Q, G) -> step_Y.S`, and `step_Y.Q -> step_X.R`.
@@ -32,9 +32,9 @@ defmodule Taskweft.OpenPLC.PLCopen do
 
   # -- public --------------------------------------------------------------
 
-  @doc "Emit PLCopen XML for one compact GRAFCET map. Returns a string."
-  def emit(%{"S" => steps, "V" => vars} = grafcet) do
-    pou_name = Map.get(grafcet, "sfc", "rectgtn_plan")
+  @doc "Emit PLCopen XML for one compact FBD map. Returns a string."
+  def emit(%{"S" => steps, "V" => vars} = fbd) do
+    pou_name = Map.get(fbd, "sfc", "rectgtn_plan")
     {names, transitions} = walk(steps)
     initial = "__init"
 
@@ -158,7 +158,11 @@ defmodule Taskweft.OpenPLC.PLCopen do
   # A transition from src(s) with guard atoms → dst. Emitted as:
   #   AND(src.Q..., guard atoms..., TON.Q if delayed) → dst.SR.S
   #   dst.Q → src.SR.R (each src)
-  defp transition_blocks(base_id, %{sources: srcs, target: dst, atoms: atoms, delay: delay}, step_id) do
+  defp transition_blocks(
+         base_id,
+         %{sources: srcs, target: dst, atoms: atoms, delay: delay},
+         step_id
+       ) do
     and_id = base_id
     ton_id = if delay, do: base_id + 1, else: nil
 
@@ -179,6 +183,7 @@ defmodule Taskweft.OpenPLC.PLCopen do
     ton_input =
       if ton_id do
         idx = length(srcs) + length(atoms) + 1
+
         ~s(                  <variable formalParameter="IN#{idx}"><connectionPointIn><connection refLocalId="#{ton_id}" formalParameter="Q"/></connectionPointIn></variable>)
       else
         ""
@@ -270,40 +275,52 @@ defmodule Taskweft.OpenPLC.PLCopen do
     """
   end
 
-  # -- walker: compact GRAFCET S array -> {names, transitions} -----------
+  # -- walker: compact FBD S array -> {names, transitions} -----------
 
   defp walk(steps) do
     {names, _} =
       Enum.reduce(steps, {[], nil}, fn row, {acc, _last} ->
         case row do
-          ["^"] -> {acc ++ ["__init"], "__init"}
-          [head | _] when head in ["&>", "&<"] -> {acc, nil}
+          ["^"] ->
+            {acc ++ ["__init"], "__init"}
+
+          [head | _] when head in ["&>", "&<"] ->
+            {acc, nil}
+
           [head | _] when head in ["|>", "|<", "!>"] ->
             raise "PLCopen emit for #{inspect(head)} is staged; see RFD 2147"
 
-          [head | _] when is_binary(head) and byte_size(head) > 0 and
-                          (binary_part(head, 0, 1) == "%" or
-                           binary_part(head, 0, 1) == "#") ->
+          [head | _]
+          when is_binary(head) and byte_size(head) > 0 and
+                 (binary_part(head, 0, 1) == "%" or
+                    binary_part(head, 0, 1) == "#") ->
             raise "PLCopen emit for #{inspect(head)} is staged; see RFD 2143"
 
-          [name, _when, _do, _t] -> {acc ++ [name], name}
-          _ -> {acc, nil}
+          [name, _when, _do, _t] ->
+            {acc ++ [name], name}
+
+          _ ->
+            {acc, nil}
         end
       end)
 
     {_, transitions, _, _} =
       Enum.reduce(steps, {nil, [], nil, nil}, fn row, {last, tacc, fp, fpen} ->
         case row do
-          ["^"] -> {"__init", tacc, fp, fpen}
+          ["^"] ->
+            {"__init", tacc, fp, fpen}
 
-          ["&>" | children] -> {last, tacc, last, children}
+          ["&>" | children] ->
+            {last, tacc, last, children}
 
-          ["&<" | preds] -> {last, tacc, fp, {:conv, preds}}
+          ["&<" | preds] ->
+            {last, tacc, fp, {:conv, preds}}
 
           [name, when_expr, _do, t_iso] ->
             {srcs, fp2, fpen2} =
               case {fpen, fp} do
-                {{:conv, preds}, _} -> {preds, fp, nil}
+                {{:conv, preds}, _} ->
+                  {preds, fp, nil}
 
                 {fanout_children, parent} when is_list(fanout_children) ->
                   if name in fanout_children do
@@ -313,7 +330,8 @@ defmodule Taskweft.OpenPLC.PLCopen do
                     {[last], fp, fpen}
                   end
 
-                _ -> {[last], fp, fpen}
+                _ ->
+                  {[last], fp, fpen}
               end
 
             atoms = parse_atoms(when_expr)
@@ -321,7 +339,8 @@ defmodule Taskweft.OpenPLC.PLCopen do
             tr = %{sources: srcs, target: name, atoms: atoms, delay: delay}
             {name, tacc ++ [tr], fp2, fpen2}
 
-          _ -> {last, tacc, fp, fpen}
+          _ ->
+            {last, tacc, fp, fpen}
         end
       end)
 
@@ -330,12 +349,16 @@ defmodule Taskweft.OpenPLC.PLCopen do
 
   defp parse_atoms(""), do: []
   defp parse_atoms(nil), do: []
+
   defp parse_atoms(expr) when is_binary(expr) do
     expr
     |> String.split("&")
     |> Enum.map(&String.trim/1)
     |> Enum.reject(&(&1 == ""))
-    |> Enum.map(fn "X." <> step -> "step_" <> step <> "_Q"; a -> a end)
+    |> Enum.map(fn
+      "X." <> step -> "step_" <> step <> "_Q"
+      a -> a
+    end)
   end
 
   defp normalise_delay(nil), do: nil

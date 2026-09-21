@@ -49,19 +49,19 @@ jobs:
       - name: Install dependencies
         run: mix deps.get
 
-      # The NIF links the GRAFCET analyser, whose Makefile needs lake to have
-      # run first. It is vendored at thirdparty/taskweft-grafcet-static rather
+      # The NIF links the FBD analyser, whose Makefile needs lake to have
+      # run first. It is vendored at thirdparty/taskweft-fbd-static rather
       # than a sibling checkout, so this job can build it.
       - name: Set up Lean (elan)
         uses: leanprover/lean-action@v1
         with:
-          lake-package-directory: thirdparty/taskweft-grafcet-static
+          lake-package-directory: thirdparty/taskweft-fbd-static
           build: false
           test: false
           lint: false
 
-      - name: lake build the GRAFCET analyser
-        working-directory: thirdparty/taskweft-grafcet-static
+      - name: lake build the FBD analyser
+        working-directory: thirdparty/taskweft-fbd-static
         run: lake build
 
       - name: Compile (builds C++20 NIF via elixir_make)

@@ -1,7 +1,7 @@
 # SPDX-License-Identifier: MIT
 # Copyright (c) 2026 K. S. Ernest (iFire) Lee
 
-defmodule Taskweft.Grafcet.StaticTest do
+defmodule Taskweft.FBD.StaticTest do
   @moduledoc """
   End-to-end test of the Lean-produced analyser through the C NIF:
   Elixir binary in, JSON binary out with `reachable` and
@@ -9,7 +9,7 @@ defmodule Taskweft.Grafcet.StaticTest do
   """
   use ExUnit.Case, async: false
 
-  alias Taskweft.Grafcet.Static
+  alias Taskweft.FBD.Static
 
   @blocks_get_or ~s({
     "S": [
@@ -28,11 +28,13 @@ defmodule Taskweft.Grafcet.StaticTest do
     result = Jason.decode!(reply)
 
     reachable = MapSet.new(result["reachable"])
+
     for step <- ~w(find pickup_from_table unstack mark_done) do
       assert step in reachable, "expected #{step} to be reachable"
     end
 
     pairs = MapSet.new(Enum.map(result["concurrent_pairs"], &MapSet.new/1))
+
     assert MapSet.new(["pickup_from_table", "unstack"]) in pairs,
            "expected the two OR branches to be flagged as a concurrent pair"
   end

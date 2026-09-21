@@ -5,15 +5,17 @@ defmodule Taskweft.OpenPLC.GDScriptTest do
   @moduledoc """
   RFD 2150 stage 1 (FBD -> GDScript reader half). Smokes that the
   emitter produces GDScript with the shape godot-sandbox's
-  SafeGDScript compiler accepts, from the same compact GRAFCET input
+  SafeGDScript compiler accepts, from the same compact FBD input
   the FBD emitter reads.
   """
   use ExUnit.Case, async: true
 
   alias Taskweft.OpenPLC.GDScript
 
-  @fixture Path.expand("../../fixtures/grafcet/weftspun-build.grafcet.jsonld",
-                       __DIR__)
+  @fixture Path.expand(
+             "../../fixtures/fbd/weftspun-build.fbd.jsonld",
+             __DIR__
+           )
 
   test "weftspun-build emits a GDScript state machine" do
     g = @fixture |> File.read!() |> Jason.decode!()
