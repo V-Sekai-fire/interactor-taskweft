@@ -1,0 +1,71 @@
+# Build libfbd_static: the C bridge linked against the Lean runtime and
+# the Lean-produced module library. `lake build` must run first.
+#
+# lake names that library for the platform and this named it .dylib
+# everywhere, so a Linux link failed on a file lake never produces:
+#
+#   ld: cannot find -l:libtaskweft_..._TaskweftFbdStatic.dylib
+#
+# Windows differs in two ways, not one: the extension is .dll AND there is no
+# lib prefix. Measured by running lake there, which is the only way it shows --
+# a Darwin/else split looks correct until a third platform arrives.
+#
+#   macOS    lib<name>.dylib
+#   Linux    lib<name>.so
+#   Windows     <name>.dll
+
+UNAME_S := $(shell uname -s)
+
+# lean --print-prefix answers with a Windows path on Windows, backslashes and
+# all, and a compiler running under MSYS cannot use that as -I: the header is
+# there and clang reports "'lean/lean.h' file not found". cygpath converts it.
+ifneq (,$(filter MINGW% MSYS% CYGWIN%,$(UNAME_S)))
+    LEAN_TOOLCHAIN := $(shell cygpath -u "$(shell lean --print-prefix)")
+else
+    LEAN_TOOLCHAIN := $(shell lean --print-prefix)
+endif
+LEAN_INCLUDE   := $(LEAN_TOOLCHAIN)/include
+LEAN_LIB       := $(LEAN_TOOLCHAIN)/lib/lean
+
+LAKE_LIB       := .lake/build/lib
+MODULE_NAME    := taskweft_x2dfbd_x2dstatic_TaskweftFbdStatic
+
+ifeq ($(UNAME_S),Darwin)
+    MODULE_FILE := lib$(MODULE_NAME).dylib
+else ifneq (,$(filter MINGW% MSYS% CYGWIN%,$(UNAME_S)))
+    MODULE_FILE := $(MODULE_NAME).dll
+else
+    MODULE_FILE := lib$(MODULE_NAME).so
+endif
+
+MODULE_LIB := $(LAKE_LIB)/$(MODULE_FILE)
+
+CC     := cc
+CFLAGS := -fPIC -O2 -Wall -I$(LEAN_INCLUDE) -Ic_src
+LDFLAGS_MAC := -shared -Wl,-rpath,@loader_path -Wl,-rpath,$(LEAN_LIB)
+
+ifeq ($(UNAME_S),Darwin)
+    OUT := libfbd_static.dylib
+    LDFLAGS := $(LDFLAGS_MAC) -install_name @rpath/libfbd_static.dylib \
+               -L$(LEAN_LIB) -Wl,-rpath,$(LEAN_LIB) \
+               -lleanshared -Wl,$(MODULE_LIB)
+else
+    # -L$(LAKE_LIB) as well as the toolchain's: the module library lake built
+    # lives there, and -l: searches only the directories -L names.
+    OUT := libfbd_static.so
+    LDFLAGS := -shared -L$(LEAN_LIB) -L$(LAKE_LIB) -Wl,-rpath,$$ORIGIN \
+               -Wl,-rpath,$(LEAN_LIB) -lleanshared -l:$(notdir $(MODULE_LIB))
+endif
+
+all: $(OUT)
+
+$(OUT): c_src/fbd_static_bridge.c $(MODULE_LIB)
+	$(CC) $(CFLAGS) c_src/fbd_static_bridge.c $(LDFLAGS) -o $@
+
+$(MODULE_LIB):
+	lake build
+
+clean:
+	rm -f $(OUT)
+
+.PHONY: all clean
