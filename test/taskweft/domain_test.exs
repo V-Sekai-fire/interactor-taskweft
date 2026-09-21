@@ -21,7 +21,7 @@ defmodule Taskweft.DomainTest do
   ]
 
   # Standalone domains with no paired problems — tested from domain alone
-  @standalone ["meta_loader"]
+  @standalone ["meta_loader", "issue_graph"]
 
   for {domain_name, problem_name} <- @pairs do
     golden_path = Path.join(@expected_path, "#{domain_name}__#{problem_name}_expected.json")
@@ -101,5 +101,24 @@ defmodule Taskweft.DomainTest do
       assert tree == expected["tree"],
              "#{unquote(domain_name)}: solution tree mismatch"
     end
+  end
+
+  # The control for issue_graph. Its plan is only evidence that the
+  # preconditions decided the order if a graph whose preconditions cannot all
+  # be satisfied is refused. issue_graph_cycle reverses one edge, so a blocks b
+  # and b blocks a, and neither can ever close.
+  @tag :domain
+  test "issue_graph_cycle is refused" do
+    dsl = Path.join(@domains_path, "issue_graph_cycle_dsl.ex")
+    {:ok, json} = File.read!(dsl) |> Taskweft.DSL.compile()
+
+    planned =
+      case Taskweft.plan_explain(json) do
+        {:ok, result} -> Jason.decode!(result)["plan"]
+        _ -> nil
+      end
+
+    assert is_nil(planned) or planned == [],
+           "a cyclic issue graph planned #{inspect(planned)}; issue_graph proves nothing"
   end
 end

@@ -1,0 +1,117 @@
+{
+  "plan": [
+    [
+      "a_close_a"
+    ],
+    [
+      "a_close_b"
+    ],
+    [
+      "a_close_c"
+    ],
+    [
+      "a_close_d"
+    ]
+  ],
+  "steps": 4,
+  "tree": [
+    {
+      "children": [
+        1
+      ],
+      "id": 0,
+      "kind": "root",
+      "parent": -1
+    },
+    {
+      "children": [
+        2,
+        3
+      ],
+      "first_step": 0,
+      "id": 1,
+      "kind": "task",
+      "method_idx": 1,
+      "name": "close_all",
+      "parent": 0
+    },
+    {
+      "children": [],
+      "id": 2,
+      "kind": "action",
+      "name": "a_close_a",
+      "parent": 1,
+      "plan_step": 0
+    },
+    {
+      "children": [
+        4,
+        5
+      ],
+      "first_step": 1,
+      "id": 3,
+      "kind": "task",
+      "method_idx": 2,
+      "name": "close_all",
+      "parent": 1
+    },
+    {
+      "children": [],
+      "id": 4,
+      "kind": "action",
+      "name": "a_close_b",
+      "parent": 3,
+      "plan_step": 1
+    },
+    {
+      "children": [
+        6,
+        7
+      ],
+      "first_step": 2,
+      "id": 5,
+      "kind": "task",
+      "method_idx": 3,
+      "name": "close_all",
+      "parent": 3
+    },
+    {
+      "children": [],
+      "id": 6,
+      "kind": "action",
+      "name": "a_close_c",
+      "parent": 5,
+      "plan_step": 2
+    },
+    {
+      "children": [
+        8,
+        9
+      ],
+      "first_step": 3,
+      "id": 7,
+      "kind": "task",
+      "method_idx": 4,
+      "name": "close_all",
+      "parent": 5
+    },
+    {
+      "children": [],
+      "id": 8,
+      "kind": "action",
+      "name": "a_close_d",
+      "parent": 7,
+      "plan_step": 3
+    },
+    {
+      "children": [],
+      "first_step": 4,
+      "id": 9,
+      "kind": "task",
+      "method_idx": 0,
+      "name": "close_all",
+      "parent": 7
+    }
+  ],
+  "tree_nodes": 10
+}
