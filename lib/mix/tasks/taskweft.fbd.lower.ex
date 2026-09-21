@@ -3,7 +3,7 @@
 
 defmodule Mix.Tasks.Taskweft.FBD.Lower do
   @moduledoc """
-  Lower a directory of compact IEC 60848 FBD JSON-LD files
+  Lower a directory of compact step/transition JSON-LD files
   (aligned with Project-AGRAFE) into taskweft HTN JSON.
 
       mix taskweft.fbd.lower --in <dir> --out <dir>

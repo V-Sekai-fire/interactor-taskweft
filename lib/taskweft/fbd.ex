@@ -3,7 +3,9 @@
 
 defmodule Taskweft.FBD do
   @moduledoc """
-  Compact IEC 60848 FBD (Project-AGRAFE aligned) <-> Taskweft HTN.
+  Compact step/transition graphs (IEC 60848 GRAFCET notation,
+  Project-AGRAFE aligned) <-> Taskweft HTN. The emit target is PLCopen
+  FBD, IEC 61131-3, which is what this module is named for.
 
   `lower/1` turns a compact FBD JSON-LD map into an HTN domain map in
   the shape the C++ NIF loader consumes (variables / actions / methods /
