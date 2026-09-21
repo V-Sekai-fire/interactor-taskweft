@@ -121,5 +121,4 @@ defmodule Taskweft.DomainTest do
     assert is_nil(planned) or planned == [],
            "a cyclic issue graph planned #{inspect(planned)}; issue_graph proves nothing"
   end
-
 end

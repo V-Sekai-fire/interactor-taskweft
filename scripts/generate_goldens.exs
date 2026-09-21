@@ -42,8 +42,10 @@ pairs = for p <- problems, d = owner.(p), do: {d, p}
 orphans = for p <- problems, is_nil(owner.(p)), do: p
 standalone = domains -- Enum.map(pairs, fn {d, _} -> d end)
 
-IO.puts("#{length(domains)} domain(s), #{length(pairs)} pair(s), " <>
-        "#{length(standalone)} standalone, #{length(orphans)} orphan problem(s)")
+IO.puts(
+  "#{length(domains)} domain(s), #{length(pairs)} pair(s), " <>
+    "#{length(standalone)} standalone, #{length(orphans)} orphan problem(s)"
+)
 
 if orphans != [] do
   IO.puts("orphan problems, named because a silent skip reads as a pass:")
@@ -77,7 +79,6 @@ domain_json = fn name ->
   end
 end
 
-
 for {domain_name, problem_name} <- pairs do
   problem_path = Path.join(problems_dir, "#{problem_name}.jsonld")
   golden_path = Path.join(expected_dir, "#{domain_name}__#{problem_name}_expected.json")
@@ -104,7 +105,11 @@ for {domain_name, problem_name} <- pairs do
       }
 
       File.write!(golden_path, Jason.encode!(golden, pretty: true))
-      IO.puts("  #{domain_name} + #{problem_name} → #{length(plan)} steps, #{length(tree)} tree nodes")
+
+      IO.puts(
+        "  #{domain_name} + #{problem_name} → #{length(plan)} steps, #{length(tree)} tree nodes"
+      )
+
       :ok
 
     {:error, reason} ->
