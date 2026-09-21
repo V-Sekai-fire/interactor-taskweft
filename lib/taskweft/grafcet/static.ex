@@ -4,7 +4,7 @@
 defmodule Taskweft.Grafcet.Static do
   @moduledoc """
   Static analyser for compact GRAFCET documents. Wraps
-  `libgrafcet_static` from `3-interactor/taskweft-grafcet-static` via
+  `libgrafcet_static` from `thirdparty/taskweft-grafcet-static` via
   the NIF at `priv/grafcet_static_nif.so`.
 
   Two structural analyses per RFD 2144:

@@ -1,26 +1,39 @@
-# NIF for the GRAFCET static analyser. Links against
-# ../taskweft-grafcet-static/libgrafcet_static.{dylib,so}, which is the
-# Lean-produced analyser + C bridge from RFD 2144.
+# NIF for the GRAFCET static analyser. Links against the Lean-produced
+# analyser and C bridge from RFD 2144, vendored at
+# thirdparty/taskweft-grafcet-static.
+#
+# It was ../taskweft-grafcet-static, a sibling checkout the goal manifest
+# places. That path exists on a desk and nowhere else, so CI clones this
+# repository alone and the build stopped at "No such file or directory". A
+# submodule is blocklisted -- repo status cannot see a second dependency
+# mechanism -- so the source is subtree'd in and is an ordinary directory.
 
 ERL_INCLUDE := $(shell erl -eval 'io:format("~ts", [code:root_dir()])' -s init stop -noshell)/erts-$(shell erl -eval 'io:format("~ts", [erlang:system_info(version)])' -s init stop -noshell)/include
 
-STATIC_ROOT := ../taskweft-grafcet-static
-STATIC_LIB  := $(STATIC_ROOT)/libgrafcet_static.dylib
+STATIC_ROOT := thirdparty/taskweft-grafcet-static
 
 CXX     := c++
 CXXFLAGS := -std=c++17 -O2 -fPIC -Wall -I$(ERL_INCLUDE)
 
 UNAME_S := $(shell uname -s)
+# The analyser is a dylib on macOS and a shared object elsewhere; the NIF is
+# .so on both, because that is what the emulator loads. Naming the analyser
+# .dylib unconditionally, as this did, meant the target never existed on Linux
+# and make had nothing to build.
 ifeq ($(UNAME_S),Darwin)
     LDFLAGS := -shared -undefined dynamic_lookup -Wl,-rpath,@loader_path
     SO_EXT := so
+    LIB_EXT := dylib
 else
     LDFLAGS := -shared -Wl,-rpath,\$$ORIGIN
     SO_EXT := so
+    LIB_EXT := so
 endif
 
+STATIC_LIB := $(STATIC_ROOT)/libgrafcet_static.$(LIB_EXT)
+
 TARGET := priv/grafcet_static_nif.$(SO_EXT)
-PRIV_LIB := priv/libgrafcet_static.dylib
+PRIV_LIB := priv/libgrafcet_static.$(LIB_EXT)
 
 all: $(TARGET) $(PRIV_LIB)
 

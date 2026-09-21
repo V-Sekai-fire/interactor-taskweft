@@ -1,5 +1,5 @@
 // Elixir NIF that calls the Lean-produced GRAFCET static analyser
-// through the C bridge in `taskweft-grafcet-static/libgrafcet_static.*`.
+// through the C bridge in `thirdparty/taskweft-grafcet-static`.
 //
 // The library exposes:
 //   char *grafcet_static_analyse(const char *sfc_json);
