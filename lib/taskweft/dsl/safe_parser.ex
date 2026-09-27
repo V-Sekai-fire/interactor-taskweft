@@ -16,7 +16,7 @@ defmodule Taskweft.DSL.SafeParser do
   @spec parse(Macro.t()) :: parse_result()
   def parse({:defmodule, _, [_, [do: block]]}) do
     with {:ok, domain_map} <- extract_domain_attributes(block) do
-      {:ok, Jason.encode!(finalize(domain_map))}
+      {:ok, Jason.encode!(domain_map)}
     end
   end
 
@@ -60,6 +60,11 @@ defmodule Taskweft.DSL.SafeParser do
 
   defp handle_attribute({:todo_list, _, [value]}, domain),
     do: Map.put(domain, "todo_list", todo_to_list(value))
+
+  # RECTGTN's Relationship-Enabled Capability layer: entities + a ReBAC graph,
+  # serialised structurally so a domain carries it without a JSON-LD copy.
+  defp handle_attribute({:capabilities, _, [value]}, domain),
+    do: Map.put(domain, "capabilities", ast_literal(value))
 
   defp handle_attribute(_, domain), do: domain
 
@@ -187,16 +192,25 @@ defmodule Taskweft.DSL.SafeParser do
 
   defp eval_to_json({:%{}, _, pairs}) when is_list(pairs) do
     type = pairs |> List.keyfind(:type, 0) |> elem(1)
-    a = pairs |> List.keyfind(:a, 0) |> elem(1) |> expr_to_json()
 
-    b =
-      case List.keyfind(pairs, :b, 0) do
-        {_, val} -> expr_to_json(val)
-        nil -> nil
-      end
+    case List.keyfind(pairs, :a, 0) do
+      {_, a_ast} ->
+        # A comparison eval: type + a + optional b (e.g. math/eq).
+        base = %{"type" => type, "a" => expr_to_json(a_ast)}
 
-    base = %{"type" => type, "a" => a}
-    if b != nil, do: Map.put(base, "b", b), else: base
+        case List.keyfind(pairs, :b, 0) do
+          {_, b_ast} -> Map.put(base, "b", expr_to_json(b_ast))
+          nil -> base
+        end
+
+      nil ->
+        # A non-comparison eval (e.g. rebac/check with rel/subject/object):
+        # carry every key but type through as a literal.
+        pairs
+        |> Enum.reject(fn {k, _} -> k == :type end)
+        |> Map.new(fn {k, v} -> {to_string(k), ast_literal(v)} end)
+        |> Map.put("type", type)
+    end
   end
 
   # â”€â”€ Check items (method alternative guards) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
@@ -255,7 +269,7 @@ defmodule Taskweft.DSL.SafeParser do
 
           nil ->
             case List.keyfind(pairs, :multigoal, 0) do
-              {_, mg} -> %{"multigoal" => mg}
+              {_, mg} -> %{"multigoal" => ast_literal(mg)}
               nil -> %{}
             end
         end
@@ -303,17 +317,9 @@ defmodule Taskweft.DSL.SafeParser do
     Map.new(pairs, fn {k, v} -> {to_string(k), ast_literal(v)} end)
   end
 
+  defp ast_literal(list) when is_list(list), do: Enum.map(list, &ast_literal/1)
+
   defp ast_literal(other), do: to_string(other)
 
   # â”€â”€ Finalize â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
-  defp finalize(domain) do
-    # Re-add capabilities if present (handled by the NIF)
-    capabilities = Map.get(domain, "capabilities")
-
-    domain
-    |> Map.delete("capabilities")
-    |> then(fn d ->
-      if capabilities, do: Map.put(d, "capabilities", capabilities), else: d
-    end)
-  end
 end
