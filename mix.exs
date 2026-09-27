@@ -128,7 +128,7 @@ defmodule Taskweft.MixProject do
 
   defp deps do
     [
-      {:taskweft_nif, "~> 0.2.0-dev"},
+      {:taskweft_nif, "~> 0.2.0-dev.20"},
       {:taskweft_rebac, "~> 0.2.0-dev"},
       {:taskweft_mcp_client, "~> 0.2.0-dev"},
       {:ex_mcp, "~> 1.0.0-rc"},
