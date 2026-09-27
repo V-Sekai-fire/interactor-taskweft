@@ -5,7 +5,7 @@ defmodule Taskweft.DSL.SafeParser do
   @moduledoc """
   Safe AST parser for Elixir module attributes used in Taskweft DSL.
 
-  Operates entirely on Elixir AST forms â€” never evaluates Code or
+  Operates entirely on Elixir AST forms — never evaluates Code or
   converts AST maps to runtime maps.  Each attribute's value is
   pattern-matched as `{:%{}, _, pairs}` or `[...]` and converted
   directly to RECTGTN JSON-LD strings.
@@ -45,7 +45,7 @@ defmodule Taskweft.DSL.SafeParser do
     {:ok, domain}
   end
 
-  # â”€â”€ handle_attribute: match each @attribute by name â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+  # ── handle_attribute: match each @attribute by name ────────────────
   defp handle_attribute({:name, _, [value]}, domain) when is_binary(value),
     do: Map.put(domain, "name", value)
 
@@ -68,9 +68,9 @@ defmodule Taskweft.DSL.SafeParser do
 
   defp handle_attribute(_, domain), do: domain
 
-  # â”€â”€ AST map helpers â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+  # ── AST map helpers ────────────────────────────────────────────────
   # Convert {:%{}, _, pairs} into a JSON map by applying a per-value
-  # transform.  Key-pair AST nodes are {key, value} â€” atoms are fine.
+  # transform.  Key-pair AST nodes are {key, value} — atoms are fine.
   defp ast_map_to_json({:%{}, _, pairs}, value_fn) when is_list(pairs) do
     Map.new(pairs, fn {k, v} -> {to_string(k), value_fn.(v)} end)
   end
@@ -87,7 +87,7 @@ defmodule Taskweft.DSL.SafeParser do
 
   defp ast_map_get(_, _key), do: nil
 
-  # â”€â”€ Variables â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+  # ── Variables ──────────────────────────────────────────────────────
   defp vars_to_list({:%{}, _, pairs}) when is_list(pairs) do
     Enum.map(pairs, fn {name, opts_ast} ->
       %{
@@ -106,7 +106,7 @@ defmodule Taskweft.DSL.SafeParser do
 
   defp init_to_map(_), do: %{}
 
-  # â”€â”€ Actions â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+  # ── Actions ────────────────────────────────────────────────────────
   defp action_to_json({:%{}, _, pairs}) when is_list(pairs) do
     params = pairs |> List.keyfind(:params, 0) |> elem(1) |> Enum.map(&to_string/1)
     body = pairs |> List.keyfind(:body, 0) |> elem(1) |> body_to_list()
@@ -140,7 +140,7 @@ defmodule Taskweft.DSL.SafeParser do
 
   defp bind_to_list(_), do: []
 
-  # â”€â”€ Methods â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+  # ── Methods ────────────────────────────────────────────────────────
   defp method_to_json({:%{}, _, pairs}) when is_list(pairs) do
     params = pairs |> List.keyfind(:params, 0) |> elem(1) |> Enum.map(&to_string/1)
     alts = pairs |> List.keyfind(:alternatives, 0) |> elem(1) |> alternatives_to_list()
@@ -168,7 +168,7 @@ defmodule Taskweft.DSL.SafeParser do
 
   defp alternatives_to_list(_), do: []
 
-  # â”€â”€ Body items (action body) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+  # ── Body items (action body) ───────────────────────────────────────
   defp body_to_list(list) when is_list(list) do
     Enum.map(list, fn
       {:%{}, _, pairs} ->
@@ -213,21 +213,21 @@ defmodule Taskweft.DSL.SafeParser do
     end
   end
 
-  # â”€â”€ Check items (method alternative guards) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+  # ── Check items (method alternative guards) ────────────────────────
   defp check_to_json({:%{}, _, pairs}) when is_list(pairs) do
     eval_ast = pairs |> List.keyfind(:eval, 0) |> elem(1)
     %{"eval" => eval_to_json(eval_ast)}
   end
 
   defp check_to_json({:condition, _, [type, args]}) do
-    # Legacy condition form â€” kept for compatibility
+    # Legacy condition form — kept for compatibility
     a = args |> List.first() |> expr_to_json()
     b = if length(args) > 1, do: args |> Enum.at(1) |> expr_to_json(), else: nil
     base = %{"type" => to_string(type), "a" => a}
     if b != nil, do: Map.put(base, "b", b), else: base
   end
 
-  # â”€â”€ Expressions (pointer_get, literals) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+  # ── Expressions (pointer_get, literals) ────────────────────────────
   defp expr_to_json({:%{}, _, pairs}) when is_list(pairs) do
     case List.keyfind(pairs, :pointer_get, 0) do
       {_, path} -> %{"type" => "pointer/get", "pointer" => to_string(path)}
@@ -242,12 +242,12 @@ defmodule Taskweft.DSL.SafeParser do
   defp expr_to_json(bin) when is_binary(bin), do: bin
   defp expr_to_json(num) when is_number(num), do: num
 
-  # pointer_set value â€” preserve booleans, stringify atoms
+  # pointer_set value — preserve booleans, stringify atoms
   defp ptr_value_to_json(true), do: true
   defp ptr_value_to_json(false), do: false
   defp ptr_value_to_json(val), do: to_string(val)
 
-  # â”€â”€ Subtasks (todo_list entries) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+  # ── Subtasks (todo_list entries) ───────────────────────────────────
   defp subtasks_to_list(list) when is_list(list) do
     Enum.map(list, fn
       [name | args] when is_atom(name) -> [to_string(name) | Enum.map(args, &arg_to_string/1)]
@@ -289,7 +289,7 @@ defmodule Taskweft.DSL.SafeParser do
   defp arg_to_string(bin) when is_binary(bin), do: bin
   defp arg_to_string(num) when is_number(num), do: to_string(num)
 
-  # â”€â”€ Goal bindings â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+  # ── Goal bindings ──────────────────────────────────────────────────
   defp goal_to_list(list) when is_list(list) do
     Enum.map(list, fn {:%{}, _, pairs} ->
       %{
@@ -306,7 +306,7 @@ defmodule Taskweft.DSL.SafeParser do
 
   defp goal_to_list(_), do: []
 
-  # â”€â”€ AST literal (for init values) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+  # ── AST literal (for init values) ──────────────────────────────────
   defp ast_literal(true), do: true
   defp ast_literal(false), do: false
   defp ast_literal(atom) when is_atom(atom), do: to_string(atom)
@@ -321,5 +321,5 @@ defmodule Taskweft.DSL.SafeParser do
 
   defp ast_literal(other), do: to_string(other)
 
-  # â”€â”€ Finalize â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+  # ── Finalize ───────────────────────────────────────────────────────
 end
