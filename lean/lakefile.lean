@@ -26,7 +26,7 @@ lean_lib «ZoneProtocol» where
 -- plausible iterative-deepening search. Kept out of the core Planner lib so
 -- only this target pulls the plausible dependency.
 require «plausible-witness-dag» from git
-  "https://github.com/fire/plausible-witness-dag" @ "main"
+  "https://github.com/V-Sekai-fire/plausible-witness-dag" @ "main/main"
 
 @[default_target]
 lean_exe «mcp_auth_witness» where
