@@ -1,9 +1,6 @@
-<!-- SPDX-License-Identifier: MIT -->
-<!-- Copyright (c) 2026 K. S. Ernest (iFire) Lee -->
-
 # interactor-taskweft
 
-An HTN planner that decides what a body should do, not how it moves, served as plan and validate tools over the Model Context Protocol.
+A general hierarchical task network planner over RECTGTN, served as plan and validate tools over the Model Context Protocol.
 
 ## What it is for
 
@@ -21,3 +18,6 @@ Prebuilt `taskweft` binaries are attached to the [releases](https://github.com/V
 ## Licence
 
 MIT; see LICENSE.
+
+<!-- SPDX-License-Identifier: MIT -->
+<!-- Copyright (c) 2026 K. S. Ernest (iFire) Lee -->
