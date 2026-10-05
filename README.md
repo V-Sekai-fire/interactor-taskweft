@@ -1,40 +1,23 @@
 <!-- SPDX-License-Identifier: MIT -->
 <!-- Copyright (c) 2026 K. S. Ernest (iFire) Lee -->
 
-# multiplayer-fabric-taskweft
+# interactor-taskweft
 
-HTN planner server exposing `plan` and `validate` tools over MCP.
+An HTN planner that decides what a body should do, not how it moves, served as plan and validate tools over the Model Context Protocol.
 
-The planner model is **RECTGTN** (Relationship-Enabled Capability-Temporal
-Goal-Task-Network). See [docs/rectgtn.md](docs/rectgtn.md).
+## What it is for
 
-Download the binary from the
-[latest release](https://github.com/V-Sekai-fire/interactor-taskweft/releases).
+It plans over RECTGTN, the Relationship-Enabled Capability-Temporal Goal-Task-Network model described in [docs/rectgtn.md](docs/rectgtn.md). Domains are written in an Elixir DSL or in JSON-LD. RFD 2304 in [manuals-weftspun](https://github.com/V-Sekai-fire/manuals-weftspun) owns the planner's design.
+
+## Build and run
 
 ```sh
-taskweft plan <domain.jsonld>        # plan from a file, --problem <d> <p>, or stdin
-taskweft plan <domain_dsl.ex>        # plan from an Elixir DSL file
-taskweft mcp [--port N] [--host H]   # run the MCP server over HTTP
-taskweft version                     # print version
+mix deps.get
+mix taskweft.mcp
 ```
 
-## MCP client
+Prebuilt `taskweft` binaries are attached to the [releases](https://github.com/V-Sekai-fire/interactor-taskweft/releases), and `taskweft help` lists their commands.
 
-Point your MCP config at the binary:
+## Licence
 
-```json
-{ "mcpServers": { "taskweft": { "url": "https://taskweft-mcp.fly.dev/mcp" } } }
-```
-
-Input via Elixir DSL (preferred) or JSON-LD. See `priv/plans/domains/blocks_world_dsl.ex`
-for a working example.
-
-## Project status
-
-Maintained, and the planner to build against.
-
-This section used to send new work to the s7-Lisp-in-libriscv stack in
-[weft-warp-loop](https://github.com/weftspun/weft-warp-loop). That stack is
-abandoned, so the replacement it pointed at is not coming and the advice had
-outlived the plan: a reader following it would have started on something with
-no maintainer instead of on this.
+MIT; see LICENSE.
